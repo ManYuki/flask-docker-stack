@@ -91,7 +91,7 @@ These values are used by both the Flask application and the PostgreSQL container
 Clone the repository and move into the project folder:
 
 ```bash
-cd /home/yuki/flask-docker-stack
+cd flask-docker-stack
 ```
 
 Start the stack:
