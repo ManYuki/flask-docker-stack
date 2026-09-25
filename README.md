@@ -1,60 +1,223 @@
-Flask Production-Ready API 🚀
+# Flask Docker Stack
 
-A containerized Flask backend with PostgreSQL, Redis caching, Prometheus monitoring, and Grafana dashboards.
+A simple Flask application containerized with Docker Compose, backed by PostgreSQL and Redis, and monitored with Prometheus and Grafana.
 
-🧱 Tech Stack
+## Overview
 
-Flask
+This project is a lightweight example of a production-style backend stack running locally in containers. It includes:
 
-Docker & Docker Compose
+- a Flask API server
+- PostgreSQL for persistence
+- Redis for caching
+- Prometheus for metrics scraping
+- Grafana for visualization
 
-PostgreSQL
+The goal is to demonstrate how a basic API can be containerized and instrumented with observability tooling in a local development environment.
 
-Redis
+## Architecture
 
-Prometheus
+```text
+Browser
+  |
+  v
+Flask API (port 5000)
+  |
+  +--> PostgreSQL
+  |
+  +--> Redis
+  |
+  +--> Prometheus (scrapes /metrics)
+         |
+         v
+       Grafana (port 3000)
+```
 
-Grafana
+## Features
 
-git
+- Flask API running on port 5000
+- PostgreSQL database with persistent volume
+- Redis service for caching and future extension
+- Prometheus scraping configuration
+- Grafana dashboard support
+- Docker health checks
+- Simple local deployment using Compose
 
-2️⃣ Run Containers
-docker compose up -d
+## Tech Stack
 
-🔗 Services
-Service	URL
-Flask API	http://localhost:5000
+- Python 3.11
+- Flask
+- PostgreSQL 15
+- Redis 7
+- Prometheus
+- Grafana
+- Docker Compose
 
-Prometheus	http://localhost:9090
+## Repository Structure
 
-Grafana	http://localhost:3000
-📊 Monitoring
+```text
+flask-docker-stack/
+├── app.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── prometheus.yml
+├── .env
+├── README.md
+└── .gitignore
+```
 
-Prometheus scrapes metrics from:
+## Prerequisites
 
-/metrics
+Before starting the project, ensure that you have:
 
+- Docker installed
+- Docker Compose installed
+- Ports 5000, 9090, and 3000 available on your machine
 
-Grafana dashboards visualize:
+## Configuration
 
-Total API requests
+Create a `.env` file in the project root:
 
-Request rate
+```env
+POSTGRES_DB=mydb
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=secret
+```
 
-Service health
+These values are used by both the Flask application and the PostgreSQL container.
 
-❤️ Health Checks
+## Getting Started
 
-Each container includes health checks to ensure reliability.
+Clone the repository and move into the project folder:
 
-📌 Key Features
+```bash
+cd /home/yuki/flask-docker-stack
+```
 
-Dockerized microservice architecture
+Start the stack:
 
-Caching with Redis
+```bash
+docker-compose up --build
+```
 
-Persistent database with PostgreSQL
+If you are using the newer Docker CLI, this is also valid:
 
-Production-style monitoring
+```bash
+docker compose up --build
+```
 
-Real-time dashboards
+After startup, the following services will be available:
+
+- Flask API: http://localhost:5000
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000
+
+## API
+
+### Root endpoint
+
+```http
+GET /
+```
+
+Example response:
+
+```json
+{
+  "message": "Dockerized Flask API Running!"
+}
+```
+
+### Metrics endpoint
+
+```http
+GET /metrics
+```
+
+This exposes Prometheus-formatted metrics for scraping.
+
+## Prometheus Configuration
+
+The project includes a basic `prometheus.yml` file that scrapes the Flask app:
+
+```yaml
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: 'flask_app'
+    static_configs:
+      - targets: ['web:5000']
+```
+
+## Grafana Setup
+
+1. Open http://localhost:3000
+2. Log in with:
+   - Username: `admin`
+   - Password: `admin`
+3. Navigate to Configuration → Data Sources
+4. Add a Prometheus data source
+5. Set the URL to:
+   - `http://prometheus:9090`
+6. Save and test the connection
+
+## Dockerfile
+
+The application image is built from the root project directory using the following Dockerfile:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]
+```
+
+## Health Checks
+
+The Compose setup includes health checks for:
+
+- the Flask service via HTTP on port 5000
+- PostgreSQL using `pg_isready`
+- Redis using `redis-cli ping`
+
+## Troubleshooting
+
+### Missing app path during build
+
+If Docker reports that `app/requirements.txt` or `app/` is missing, make sure the Dockerfile is copying files from the project root instead of a nested directory.
+
+### Services fail to start
+
+Make sure your `.env` file exists and contains:
+
+```env
+POSTGRES_DB=mydb
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=secret
+```
+
+### Grafana shows no data
+
+Ensure Prometheus is running and that the Grafana Prometheus data source points to:
+
+```text
+http://prometheus:9090
+```
+
+## License
+
+This project is intended for learning and local development use.
+
+## Notes
+
+This repository is intentionally simple and meant to illustrate how to run a Flask application with a monitoring stack in Docker Compose. It can serve as a foundation for building more advanced internal services or API backends.
